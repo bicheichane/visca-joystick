@@ -15,7 +15,7 @@ def configure():
         time.sleep(0.05)
 
     event = pygame.event.get(eventtype=pygame.JOYBUTTONDOWN)[0]
-    if event.dict['button'] == mappings['other']['configure']:
+    """if event.dict['button'] == mappings['other']['configure']:
         print(f'Configuring...')
 
         for ip in ips:
@@ -30,7 +30,7 @@ def configure():
             cam.recall_preset(8)
             cam.close_connection()
 
-        time.sleep(2)
+        time.sleep(2)"""
 
 
 def shut_down(current_camera: Camera):

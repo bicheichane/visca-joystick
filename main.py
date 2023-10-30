@@ -3,20 +3,28 @@ import time
 
 os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 
-import pygame
 from visca_over_ip.exceptions import ViscaException
 from numpy import interp
 
 from config import ips, mappings, sensitivity_tables, help_text, Camera, long_press_time
 from startup_shutdown import shut_down, configure
+import pyglet
 
+class JoystickEventHandler:
+    def on_joyaxis_motion(_self, joystick, axis, value):
+        print(f'axis {axis}: {value}')
+        pass
 
 invert_tilt = True
 cam = None
-joystick = None
-joystick_reset_time = None
 last_focus_time = None
 button_down_time = {key: None for key in mappings['preset']}
+
+joystick = pyglet.input.get_joysticks()[0]
+joystick.open()
+
+
+
 
 
 def joystick_init(print_battery=False):
@@ -26,11 +34,7 @@ def joystick_init(print_battery=False):
     """
     global joystick, joystick_reset_time
 
-    pygame.joystick.quit()
-    pygame.display.quit()
-
-    pygame.display.init()
-    pygame.joystick.init()
+    
 
     while True:
         try:
@@ -43,7 +47,10 @@ def joystick_init(print_battery=False):
     if print_battery:
         print('Joystick battery is', joystick.get_power_level())
 
-    joystick_reset_time = time.time() + 20
+    print("axis count: " + str(joystick.get_numaxes()))
+    print("axis 0: " + str(joystick.get_axis(0)))
+    print("axis 1: " + str(joystick.get_axis(1)))
+    print("axis 2: " + str(joystick.get_axis(2)))
 
 
 def joy_pos_to_cam_speed(axis_position: float, table_name: str, invert=True) -> int:
@@ -167,33 +174,48 @@ def handle_preset_buttons():
 
 def main_loop():
     while True:
-        handle_button_presses()
-        update_brightness()
-        update_focus()
-        handle_preset_buttons()
+        timeout = pyglet.clock.tick()
+        pyglet.app.platform_event_loop.step(timeout)
+        #handle_button_presses()
+        #update_brightness()
+        #update_focus()
+        #handle_preset_buttons()
 
-        cam.pantilt(
-            pan_speed=joy_pos_to_cam_speed(joystick.get_axis(mappings['movement']['pan']), 'pan'),
-            tilt_speed=joy_pos_to_cam_speed(joystick.get_axis(mappings['movement']['tilt']), 'tilt', invert_tilt)
-        )
-        time.sleep(0.03)
-        cam.zoom(joy_pos_to_cam_speed(joystick.get_axis(mappings['movement']['zoom']), 'zoom'))
+        global joystick
 
-        if time.time() >= joystick_reset_time:
-            joystick_init()
+        #cam.pantilt(
+        #    pan_speed=joy_pos_to_cam_speed(joystick.get_axis(mappings['movement']['pan']), 'pan'),
+        #    tilt_speed=joy_pos_to_cam_speed(joystick.get_axis(mappings['movement']['tilt']), 'tilt', invert_tilt)
+        #)
+        
+        pan_speed=joy_pos_to_cam_speed(joystick.x, 'pan'),
+        tilt_speed=joy_pos_to_cam_speed(joystick.y, 'tilt', invert_tilt)
+        zoom_speed=joy_pos_to_cam_speed(joystick.z, 'zoom')
+
+        print(f"pan= {pan_speed} | tilt= {tilt_speed} | zoom= {zoom_speed}")
+
+        #120 fps
+        #time.sleep(0.0083)
+        time.sleep(0.1)
+        #cam.zoom(joy_pos_to_cam_speed(joystick.get_axis(mappings['movement']['zoom']), 'zoom'))
 
 
 if __name__ == "__main__":
     print('Welcome to VISCA Joystick!')
-    joystick_init(print_battery=True)
-    print()
-    print(help_text)
-    configure()
-    cam = connect_to_camera(0)
+    #joystick_init()
+    #print()
+    #print(help_text)
+    #configure()
+    #cam = connect_to_camera(0)
+
+
 
     while True:
         try:
+            #pyglet.app.run(1)
             main_loop()
 
         except Exception as exc:
-            print(exc)
+            print("Exception: " + str(exc))
+        
+        time.sleep(1)
