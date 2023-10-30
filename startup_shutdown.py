@@ -1,6 +1,5 @@
 import time
 
-import pygame
 from visca_over_ip import Camera
 
 from config import mappings, ips
